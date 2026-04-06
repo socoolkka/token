@@ -1,210 +1,205 @@
-import express from "express";
-import { z } from "zod";
+from flask import Flask, request, jsonify
+import os
+from datetime import datetime
 
-const app = express();
-app.use(express.json());
+app = Flask(__name__)
 
-const PORT = process.env.PORT || 3000;
+db = {
+    "operations": [],
+    "operationLogs": []
+}
 
-const db = {
-  operations: [],
-  operationLogs: [],
-};
+operation_id_counter = 1
 
-let operationIdCounter = 1;
+@app.route("/api/roblox/join", methods=["POST"])
+def join():
+    global operation_id_counter
+    try:
+        data = request.get_json()
+        invite_code = data.get("inviteCode")
+        token_ids = data.get("tokenIds")
+        user_id = data.get("userId")
 
-app.post("/api/roblox/join", (req, res) => {
-  try {
-    const { inviteCode, tokenIds, userId } = req.body;
+        if not invite_code or not token_ids or not user_id:
+            return jsonify({"error": "Missing required fields"}), 400
 
-    if (!inviteCode || !tokenIds || !userId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+        operation_id = operation_id_counter
+        operation_id_counter += 1
 
-    const operationId = operationIdCounter++;
+        db["operations"].append({
+            "id": operation_id,
+            "userId": user_id,
+            "type": "join",
+            "status": "pending",
+            "targetId": invite_code,
+            "tokenCount": len(token_ids),
+            "createdAt": datetime.now().isoformat()
+        })
 
-    db.operations.push({
-      id: operationId,
-      userId: userId,
-      type: "join",
-      status: "pending",
-      targetId: inviteCode,
-      tokenCount: tokenIds.length,
-      createdAt: new Date(),
-    });
+        for token_id in token_ids:
+            db["operationLogs"].append({
+                "operationId": operation_id,
+                "tokenId": token_id,
+                "status": "pending",
+                "message": "Queued for execution",
+                "createdAt": datetime.now().isoformat()
+            })
 
-    for (const tokenId of tokenIds) {
-      db.operationLogs.push({
-        operationId: operationId,
-        tokenId: tokenId,
-        status: "pending",
-        message: "Queued for execution",
-        createdAt: new Date(),
-      });
-    }
+        return jsonify({
+            "success": True,
+            "operationId": operation_id,
+            "message": "Join operation started"
+        })
+    except Exception as e:
+        print(f"Join error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-    res.json({
-      success: true,
-      operationId: operationId,
-      message: "Join operation started",
-    });
-  } catch (error) {
-    console.error("Join error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+@app.route("/api/roblox/leave", methods=["POST"])
+def leave():
+    global operation_id_counter
+    try:
+        data = request.get_json()
+        guild_id = data.get("guildId")
+        token_ids = data.get("tokenIds")
+        user_id = data.get("userId")
 
-app.post("/api/roblox/leave", (req, res) => {
-  try {
-    const { guildId, tokenIds, userId } = req.body;
+        if not guild_id or not token_ids or not user_id:
+            return jsonify({"error": "Missing required fields"}), 400
 
-    if (!guildId || !tokenIds || !userId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+        operation_id = operation_id_counter
+        operation_id_counter += 1
 
-    const operationId = operationIdCounter++;
+        db["operations"].append({
+            "id": operation_id,
+            "userId": user_id,
+            "type": "leave",
+            "status": "pending",
+            "targetId": guild_id,
+            "tokenCount": len(token_ids),
+            "createdAt": datetime.now().isoformat()
+        })
 
-    db.operations.push({
-      id: operationId,
-      userId: userId,
-      type: "leave",
-      status: "pending",
-      targetId: guildId,
-      tokenCount: tokenIds.length,
-      createdAt: new Date(),
-    });
+        for token_id in token_ids:
+            db["operationLogs"].append({
+                "operationId": operation_id,
+                "tokenId": token_id,
+                "status": "pending",
+                "message": "Queued for execution",
+                "createdAt": datetime.now().isoformat()
+            })
 
-    for (const tokenId of tokenIds) {
-      db.operationLogs.push({
-        operationId: operationId,
-        tokenId: tokenId,
-        status: "pending",
-        message: "Queued for execution",
-        createdAt: new Date(),
-      });
-    }
+        return jsonify({
+            "success": True,
+            "operationId": operation_id,
+            "message": "Leave operation started"
+        })
+    except Exception as e:
+        print(f"Leave error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-    res.json({
-      success: true,
-      operationId: operationId,
-      message: "Leave operation started",
-    });
-  } catch (error) {
-    console.error("Leave error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+@app.route("/api/roblox/spam", methods=["POST"])
+def spam():
+    global operation_id_counter
+    try:
+        data = request.get_json()
+        channel_id = data.get("channelId")
+        message = data.get("message")
+        token_ids = data.get("tokenIds")
+        user_id = data.get("userId")
 
-app.post("/api/roblox/spam", (req, res) => {
-  try {
-    const { channelId, message, tokenIds, userId } = req.body;
+        if not channel_id or not message or not token_ids or not user_id:
+            return jsonify({"error": "Missing required fields"}), 400
 
-    if (!channelId || !message || !tokenIds || !userId) {
-      return res.status(400).json({ error: "Missing required fields" });
-    }
+        operation_id = operation_id_counter
+        operation_id_counter += 1
 
-    const operationId = operationIdCounter++;
+        db["operations"].append({
+            "id": operation_id,
+            "userId": user_id,
+            "type": "spam",
+            "status": "pending",
+            "targetId": channel_id,
+            "tokenCount": len(token_ids),
+            "metadata": {"message": message},
+            "createdAt": datetime.now().isoformat()
+        })
 
-    db.operations.push({
-      id: operationId,
-      userId: userId,
-      type: "spam",
-      status: "pending",
-      targetId: channelId,
-      tokenCount: tokenIds.length,
-      metadata: { message: message },
-      createdAt: new Date(),
-    });
+        for token_id in token_ids:
+            db["operationLogs"].append({
+                "operationId": operation_id,
+                "tokenId": token_id,
+                "status": "pending",
+                "message": "Queued for execution",
+                "createdAt": datetime.now().isoformat()
+            })
 
-    for (const tokenId of tokenIds) {
-      db.operationLogs.push({
-        operationId: operationId,
-        tokenId: tokenId,
-        status: "pending",
-        message: "Queued for execution",
-        createdAt: new Date(),
-      });
-    }
+        return jsonify({
+            "success": True,
+            "operationId": operation_id,
+            "message": "Spam operation started"
+        })
+    except Exception as e:
+        print(f"Spam error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-    res.json({
-      success: true,
-      operationId: operationId,
-      message: "Spam operation started",
-    });
-  } catch (error) {
-    console.error("Spam error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+@app.route("/api/roblox/operation/<int:operation_id>", methods=["GET"])
+def get_operation(operation_id):
+    try:
+        operation = None
+        for op in db["operations"]:
+            if op["id"] == operation_id:
+                operation = op
+                break
 
-app.get("/api/roblox/operation/:id", (req, res) => {
-  try {
-    const operationId = parseInt(req.params.id);
+        if not operation:
+            return jsonify({"error": "Operation not found"}), 404
 
-    const operation = db.operations.find((op) => op.id === operationId);
+        logs = [log for log in db["operationLogs"] if log["operationId"] == operation_id]
 
-    if (!operation) {
-      return res.status(404).json({ error: "Operation not found" });
-    }
+        success_count = len([l for l in logs if l["status"] == "success"])
+        failure_count = len([l for l in logs if l["status"] == "failed"])
+        captcha_count = len([l for l in logs if "captcha" in l["message"].lower()])
+        cloudflare_count = len([l for l in logs if "cloudflare" in l["message"].lower()])
 
-    const logs = db.operationLogs.filter(
-      (log) => log.operationId === operationId
-    );
+        return jsonify({
+            "id": operation["id"],
+            "type": operation["type"],
+            "status": operation["status"],
+            "tokenCount": operation["tokenCount"],
+            "successCount": success_count,
+            "failureCount": failure_count,
+            "captchaCount": captcha_count,
+            "cloudflareCount": cloudflare_count,
+            "createdAt": operation["createdAt"]
+        })
+    except Exception as e:
+        print(f"Get operation error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-    const successCount = logs.filter((l) => l.status === "success").length;
-    const failureCount = logs.filter((l) => l.status === "failed").length;
-    const captchaCount = logs.filter((l) =>
-      l.message.includes("captcha")
-    ).length;
-    const cloudflareCount = logs.filter((l) =>
-      l.message.includes("cloudflare")
-    ).length;
+@app.route("/api/roblox/operation/<int:operation_id>/logs", methods=["GET"])
+def get_operation_logs(operation_id):
+    try:
+        logs = [log for log in db["operationLogs"] if log["operationId"] == operation_id]
 
-    res.json({
-      id: operation.id,
-      type: operation.type,
-      status: operation.status,
-      tokenCount: operation.tokenCount,
-      successCount: successCount,
-      failureCount: failureCount,
-      captchaCount: captchaCount,
-      cloudflareCount: cloudflareCount,
-      createdAt: operation.createdAt,
-    });
-  } catch (error) {
-    console.error("Get operation error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
+        return jsonify({
+            "logs": [
+                {
+                    "tokenId": log["tokenId"],
+                    "status": log["status"],
+                    "message": log["message"],
+                    "createdAt": log["createdAt"]
+                }
+                for log in logs
+            ]
+        })
+    except Exception as e:
+        print(f"Get logs error: {e}")
+        return jsonify({"error": "Internal server error"}), 500
 
-app.get("/api/roblox/operation/:id/logs", (req, res) => {
-  try {
-    const operationId = parseInt(req.params.id);
+@app.route("/api/health", methods=["GET"])
+def health():
+    return jsonify({"status": "ok", "timestamp": datetime.now().isoformat()})
 
-    const logs = db.operationLogs.filter(
-      (log) => log.operationId === operationId
-    );
-
-    res.json({
-      logs: logs.map((log) => ({
-        tokenId: log.tokenId,
-        status: log.status,
-        message: log.message,
-        createdAt: log.createdAt,
-      })),
-    });
-  } catch (error) {
-    console.error("Get logs error:", error);
-    res.status(500).json({ error: "Internal server error" });
-  }
-});
-
-app.get("/api/health", (req, res) => {
-  res.json({ status: "ok", timestamp: new Date() });
-});
-
-app.listen(PORT, () => {
-  console.log(`CWELIUM API running on port ${PORT}`);
-});
-
-export default app;
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 3000))
+    app.run(host="0.0.0.0", port=port)
