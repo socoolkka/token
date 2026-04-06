@@ -11,6 +11,67 @@ db = {
 
 operation_id_counter = 1
 
+@app.route("/", methods=["GET"])
+def home():
+    html = """
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>CWELIUM API</title>
+        <style>
+            body { background-color: #000; color: #fff; font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+            .container { max-width: 800px; margin: 0 auto; }
+            h1 { border-bottom: 4px solid #ff0000; padding-bottom: 10px; }
+            .endpoint { background-color: #1a1a1a; padding: 15px; margin: 10px 0; border: 1px solid #fff; }
+            .method { color: #00ff00; font-weight: bold; }
+            code { background-color: #0a0a0a; padding: 2px 5px; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <h1>CWELIUM API</h1>
+            <p>Discord Automation Framework for Roblox</p>
+            
+            <h2>API ENDPOINTS</h2>
+            
+            <div class="endpoint">
+                <p><span class="method">POST</span> /api/roblox/join</p>
+                <p>Join Discord server with tokens</p>
+                <code>{"inviteCode": "discord.gg/XXX", "tokenIds": [1,2,3], "userId": 1}</code>
+            </div>
+            
+            <div class="endpoint">
+                <p><span class="method">POST</span> /api/roblox/leave</p>
+                <p>Leave Discord server with tokens</p>
+                <code>{"guildId": "123456", "tokenIds": [1,2,3], "userId": 1}</code>
+            </div>
+            
+            <div class="endpoint">
+                <p><span class="method">POST</span> /api/roblox/spam</p>
+                <p>Send messages with tokens</p>
+                <code>{"channelId": "123456", "message": "text", "tokenIds": [1,2,3], "userId": 1}</code>
+            </div>
+            
+            <div class="endpoint">
+                <p><span class="method">GET</span> /api/roblox/operation/:id</p>
+                <p>Get operation status</p>
+            </div>
+            
+            <div class="endpoint">
+                <p><span class="method">GET</span> /api/roblox/operation/:id/logs</p>
+                <p>Get operation logs</p>
+            </div>
+            
+            <div class="endpoint">
+                <p><span class="method">GET</span> /api/health</p>
+                <p>Health check</p>
+            </div>
+        </div>
+    </body>
+    </html>
+    """
+    return html
+
 @app.route("/api/roblox/join", methods=["POST"])
 def join():
     global operation_id_counter
